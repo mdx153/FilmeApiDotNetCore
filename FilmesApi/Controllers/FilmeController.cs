@@ -57,11 +57,23 @@ public class FilmeController: ControllerBase
     /// <response code="200">Lista de filmes</response>
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public IEnumerable<ReadFilmeDto> RecuperarFilmes([FromQuery] int skip = 0,
-        [FromQuery] int take = 50)
+    public IEnumerable<ReadFilmeDto> RecuperarFilmes(
+        [FromQuery] int skip = 0,
+        [FromQuery] int take = 50,
+        [FromQuery] string? nomeCinema = null)
     {
-        //retorna uma lista de readfilmedto
-        return _mappper.Map<List<ReadFilmeDto>>(_context.Filmes.Skip(skip).Take(take));
+        if(nomeCinema == null)
+        {
+            return _mappper.Map<List<ReadFilmeDto>>(
+                _context.Filmes.Skip(skip).Take(take).ToList());
+        }
+
+        return _mappper.Map<List<ReadFilmeDto>>(
+                _context.Filmes.Skip(skip).Take(take)
+                .Where(filme => filme.Sessoes.Any(sessao => sessao.Cinema.Nome == nomeCinema))
+                .ToList());
+
+
     }
 
     /// <summary>
@@ -76,7 +88,6 @@ public class FilmeController: ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult RecuperarFilmePorId(int id)
     {
-        //Faz o select
         var filme = _context.Filmes.FirstOrDefault(x => x.Id == id);
         if (filme == null) return NotFound();
 
@@ -133,7 +144,7 @@ public class FilmeController: ControllerBase
 
         _mappper.Map(filmeParaAtualizar, filme); 
         _context.SaveChanges();
-        return NoContent(); //204
+        return NoContent();
     }
 
     /// <summary>
